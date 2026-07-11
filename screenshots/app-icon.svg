@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#232427"/>
+      <stop offset="100%" stop-color="#0a0a0b"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285f4"/>
+      <stop offset="55%" stop-color="#9b72cb"/>
+      <stop offset="100%" stop-color="#d96570"/>
+    </linearGradient>
+    <linearGradient id="topSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#5a7cff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#5a7cff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- macOS "squircle" base -->
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="url(#bg)"/>
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="url(#glow)"/>
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="url(#topSheen)"/>
+  <rect x="32.5" y="32.5" width="959" height="959" rx="219.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- glass tab bar hint -->
+  <rect x="140" y="150" width="744" height="96" rx="48" fill="#ffffff" opacity="0.05"/>
+  <rect x="164" y="174" width="230" height="48" rx="24" fill="#ffffff" opacity="0.14"/>
+
+  <!-- W mark -->
+  <path d="M 250 400 L 390 700 L 512 470 L 634 700 L 774 400"
+        fill="none" stroke="url(#mark)" stroke-width="72"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
