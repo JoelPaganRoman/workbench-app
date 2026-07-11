@@ -1,0 +1,29 @@
+<svg width="640" height="140" viewBox="0 0 640 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285f4"/>
+      <stop offset="55%" stop-color="#9b72cb"/>
+      <stop offset="100%" stop-color="#d96570"/>
+    </linearGradient>
+    <linearGradient id="glassStroke" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="140" fill="#000000"/>
+
+  <!-- icon: rounded glass square with W mark -->
+  <rect x="24" y="26" width="88" height="88" rx="22" fill="#111214" stroke="url(#glassStroke)" stroke-width="1.5"/>
+  <path d="M40 52 L52 92 L68 62 L84 92 L96 52"
+        fill="none" stroke="url(#iconGrad)" stroke-width="8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- wordmark -->
+  <text x="134" y="86" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif"
+        font-size="52" font-weight="600" fill="#ffffff" letter-spacing="-1">Workbench</text>
+
+  <!-- tagline -->
+  <text x="137" y="112" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif"
+        font-size="16" font-weight="500" fill="#9aa0a6" letter-spacing="0.3">Docs · Sheets · Slides · Gemini · Drive — una sola app</text>
+</svg>
