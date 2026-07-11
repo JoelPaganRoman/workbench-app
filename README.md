@@ -1,65 +1,67 @@
+<p align="right"><a href="README.es.md">🇪🇸 Español</a></p>
+
 <p align="center">
   <img src="screenshots/logo.svg" alt="Workbench" width="480">
 </p>
 
 # Workbench
 
-Workbench es una app de escritorio para macOS que reúne **Google Docs,
-Sheets, Slides, Gemini y Drive** en una sola ventana con pestañas, en vez de
-tener que manejarlos como pestañas sueltas del navegador.
+Workbench is a macOS desktop app that brings together **Google Docs, Sheets,
+Slides, Gemini, and Drive** in a single tabbed window, instead of juggling
+them as separate browser tabs.
 
-## Capturas
+## Screenshots
 
 | Docs | Slides |
 |---|---|
-| ![Vista de Docs](screenshots/docs-view.png) | ![Vista de Slides](screenshots/slides-view.png) |
+| ![Docs view](screenshots/docs-view.png) | ![Slides view](screenshots/slides-view.png) |
 
-| Pantalla dividida (Gemini + Docs) |
+| Split view (Gemini + Docs) |
 |---|
-| ![Modo split](screenshots/split-view.png) |
+| ![Split view](screenshots/split-view.png) |
 
-## Qué hace
+## What it does
 
-- **5 apps en una sola ventana**: Docs, Sheets, Slides, Gemini y Drive, cada
-  una con su propia pestaña (⌘1–⌘5 para saltar entre ellas).
-- **Enrutamiento automático**: si abres un archivo desde Drive, la app
-  detecta si es un documento, una hoja de cálculo o una presentación, y lo
-  abre directamente en la pestaña correspondiente — nunca sales de la app.
-- **Pantalla dividida**: dos paneles lado a lado, cada uno con su propio
-  selector de app independiente (botón "Split" o ⌘\\).
-- Guarda tu sesión de Google entre usos — no hay que iniciar sesión cada vez.
+- **5 apps in one window**: Docs, Sheets, Slides, Gemini, and Drive, each
+  with its own tab (⌘1–⌘5 to jump between them).
+- **Automatic routing**: open a file from Drive and the app detects whether
+  it's a document, spreadsheet, or presentation, and opens it directly in
+  the matching tab — you never leave the app.
+- **Split screen**: two side-by-side panes, each with its own independent
+  app selector ("Split" button or ⌘\\).
+- Keeps your Google session between launches — no need to sign in every
+  time.
 
-## Instalación
+## Installation
 
-1. Ve a la pestaña [**Releases**](../../releases) de este repositorio y
-   descarga el `.zip` más reciente (`Workbench-mac.zip`).
-2. Arrastra `Workbench.app` a tu carpeta
-   **Aplicaciones**.
-3. Al abrirla por primera vez, macOS mostrará un aviso de que no puede
-   verificar quién hizo la app. Esto es esperado — sigue estos pasos:
-   - Intenta abrir la app normalmente (doble clic). Verás el aviso de
-     bloqueo.
-   - Ve a **Configuración del Sistema → Privacidad y Seguridad**.
-   - Baja hasta la sección de Seguridad. Debería aparecer un mensaje
-     mencionando que "Workbench" fue bloqueada, con un botón
-     **Abrir de todos modos**.
-   - Haz clic ahí y confirma con tu contraseña o Touch ID.
-   - Abre la app una vez más y confirma con **Abrir** en el último diálogo.
-     A partir de ahí, la app abre normalmente sin volver a preguntar.
+1. Go to the [**Releases**](../../releases) tab of this repository and
+   download the latest `.zip` (`Workbench-mac.zip`).
+2. Drag `Workbench.app` into your **Applications** folder.
+3. The first time you open it, macOS will warn that it can't verify the
+   developer. This is expected — follow these steps:
+   - Try opening the app normally (double-click). You'll see the block
+     warning.
+   - Go to **System Settings → Privacy & Security**.
+   - Scroll down to the Security section. You should see a message
+     mentioning that "Workbench" was blocked, with an
+     **Open Anyway** button.
+   - Click it and confirm with your password or Touch ID.
+   - Open the app once more and confirm with **Open** on the final dialog.
+     From then on, the app opens normally without asking again.
 
-### ¿Por qué hay que hacer esto en vez de simplemente abrir la app?
+### Why do I have to do this instead of just opening the app?
 
-macOS solo abre "sin preguntar" las apps que pasaron por el proceso de
-**notarización de Apple**, que requiere una membresía paga del
-**Apple Developer Program** (99 USD al año) más un certificado de firma
-propio. Workbench es un proyecto personal/pequeño, así que en lugar de pagar
-esa cuota, la app se firma con una **firma "ad-hoc"** (gratuita) durante el
-proceso de build automático en GitHub Actions.
+macOS only opens apps "without asking" if they've gone through Apple's
+**notarization** process, which requires a paid **Apple Developer Program**
+membership (99 USD/year) plus your own signing certificate. Workbench is a
+small personal project, so instead of paying that fee, the app is signed
+with an **ad-hoc signature** (free) during the automated build process on
+GitHub Actions.
 
-Esa firma ad-hoc es suficiente para que macOS confíe en que el archivo no fue
-alterado después de compilarse, pero no incluye la verificación de identidad
-de un desarrollador registrado ante Apple — por eso Gatekeeper (el sistema de
-seguridad de macOS) la trata como "de un desarrollador no identificado" y
-pide una confirmación manual la primera vez, en vez de bloquearla
-directamente como "dañada". Es un paso único por instalación, no algo que se
-repita cada vez que abras la app.
+That ad-hoc signature is enough for macOS to trust that the file hasn't been
+tampered with after being built, but it doesn't include identity
+verification from a developer registered with Apple — which is why
+Gatekeeper (macOS's security system) treats it as coming from an
+"unidentified developer" and asks for manual confirmation the first time,
+instead of blocking it outright as "damaged." It's a one-time step per
+install, not something that repeats every time you open the app.
