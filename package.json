@@ -1,0 +1,26 @@
+{
+  "name": "workbench",
+  "productName": "Workbench",
+  "version": "1.0.0",
+  "description": "Docs, Sheets, Slides, Gemini y Drive en una sola app de escritorio",
+  "main": "main.js",
+  "author": "Joel Pagan Roman",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac --universal"
+  },
+  "build": {
+    "appId": "com.joelpaganroman.workbench",
+    "productName": "Workbench",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [{ "target": "dir", "arch": ["universal"] }]
+    },
+    "directories": { "output": "dist" }
+  },
+  "devDependencies": {
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
+  }
+}
