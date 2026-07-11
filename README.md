@@ -44,7 +44,7 @@ proceso de build automático en GitHub Actions.
 
 Esa firma ad-hoc es suficiente para que macOS confíe en que el archivo no fue
 alterado después de compilarse, pero no incluye la verificación de identidad
-de un desarrollador registrado ante Apple — por eso Gatekeeper (el sistema de
+de un desarrollador registrado ante Apple por eso Gatekeeper (el sistema de
 seguridad de macOS) la trata como "de un desarrollador no identificado" y
 pide una confirmación manual la primera vez, en vez de bloquearla
 directamente como "dañada". Es un paso único por instalación, no algo que se
