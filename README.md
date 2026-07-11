@@ -19,7 +19,7 @@ tener que manejarlos como pestañas sueltas del navegador.
 
 1. Ve a la pestaña [**Releases**](../../releases) de este repositorio y
    descarga el `.zip` más reciente (`Workbench-mac.zip`).
-2. Descomprime el `.zip` y arrastra `Workbench.app` a tu carpeta
+2. Arrastra `Workbench.app` a tu carpeta
    **Aplicaciones**.
 3. Al abrirla por primera vez, macOS mostrará un aviso de que no puede
    verificar quién hizo la app. Esto es esperado — sigue estos pasos:
@@ -49,28 +49,3 @@ seguridad de macOS) la trata como "de un desarrollador no identificado" y
 pide una confirmación manual la primera vez, en vez de bloquearla
 directamente como "dañada". Es un paso único por instalación, no algo que se
 repita cada vez que abras la app.
-
-## Cómo generar una nueva build firmada
-
-Cada vez que se publique una nueva versión ya compilada y firmada
-(ad-hoc, sin necesidad de una Mac propia ni de pagar Apple Developer):
-
-```bash
-git tag v1.0.1
-git push origin v1.0.1
-```
-
-Esto dispara el workflow `.github/workflows/build-mac.yml`, que:
-1. Compila la app en un runner real de macOS (arquitectura universal: Apple Silicon + Intel).
-2. La firma con una firma ad-hoc.
-3. Publica el `.zip` firmado como un GitHub Release descargable.
-
-También puedes disparar el build manualmente sin crear un tag: pestaña
-**Actions** del repo → **Build & Sign Workbench (macOS)** → **Run workflow**.
-
-## Desarrollo local
-
-```bash
-npm install
-npm start
-```
