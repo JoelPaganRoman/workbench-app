@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
-const TAB_BAR_SIZE = 48;   // height when tabs are on top, width when tabs are on the left
+const TAB_BAR_HEIGHT_TOP = 48;  // top bar height when tabs are on top
+const TAB_BAR_WIDTH_LEFT = 68;  // sidebar width when tabs are on the left
 const PANE_BAR_SIZE = 38;  // second row (top mode) / second column (left mode), split mode only
 const DIVIDER_SIZE = 6;    // draggable divider thickness between split panes
 const MIN_RATIO = 0.15;
@@ -138,8 +139,9 @@ function classifyUrl(url) {
   return null;
 }
 
-function getChromeSize() {
-  return TAB_BAR_SIZE + (splitMode ? PANE_BAR_SIZE : 0);
+function getChromeSize(isLeft) {
+  const base = isLeft ? TAB_BAR_WIDTH_LEFT : TAB_BAR_HEIGHT_TOP;
+  return base + (splitMode ? PANE_BAR_SIZE : 0);
 }
 
 function layout() {
@@ -147,7 +149,7 @@ function layout() {
   const [width, height] = win.getContentSize();
   const settings = loadSettings();
   const isLeft = settings.tabPosition === 'left';
-  const chromeSize = getChromeSize();
+  const chromeSize = getChromeSize(isLeft);
 
   if (isLeft) {
     chromeView.setBounds({ x: 0, y: 0, width: chromeSize, height });
