@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: transparent;
+    cursor: col-resize;
+    overflow: hidden;
+  }
+  #hit {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #line {
+    width: 1px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    transition: background 0.12s ease;
+  }
+  #hit:hover #line, #hit.dragging #line {
+    background: rgba(120, 160, 255, 0.55);
+  }
+</style>
+</head>
+<body>
+  <div id="hit"><div id="line"></div></div>
+  <script>
+    const hit = document.getElementById('hit');
+    let dragging = false;
+
+    hit.addEventListener('mousedown', (e) => {
+      dragging = true;
+      hit.classList.add('dragging');
+      window.dividerAPI.dragStart(e.screenX);
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      window.dividerAPI.dragMove(e.screenX);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      hit.classList.remove('dragging');
+      window.dividerAPI.dragEnd();
+    });
+  </script>
+</body>
+</html>

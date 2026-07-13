@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('tabAPI', {
   toggleSplit: () => ipcRenderer.send('toggle-split'),
   closeSplit: () => ipcRenderer.send('close-split'),
   selectPaneTab: (pane, key) => ipcRenderer.send('select-pane-tab', { pane, key }),
-  onPanesChanged: (callback) => ipcRenderer.on('panes-changed', (_event, panes, splitMode) => callback(panes, splitMode))
+  onPanesChanged: (callback) => ipcRenderer.on('panes-changed', (_event, panes, splitMode) => callback(panes, splitMode)),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  onSettingsChanged: (callback) => ipcRenderer.on('settings-changed', (_event, settings) => callback(settings))
 });

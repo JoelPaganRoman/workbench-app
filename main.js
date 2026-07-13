@@ -1,8 +1,16 @@
-const { app, BaseWindow, WebContentsView, Menu, shell, ipcMain } = require('electron');
+const { app, BaseWindow, WebContentsView, Menu, shell, ipcMain, dialog, screen } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const https = require('https');
 
-const TAB_BAR_HEIGHT = 48;
-const PANE_BAR_HEIGHT = 38;
+const TAB_BAR_SIZE = 48;   // height when tabs are on top, width when tabs are on the left
+const PANE_BAR_SIZE = 38;  // second row (top mode) / second column (left mode), split mode only
+const DIVIDER_SIZE = 6;    // draggable divider thickness between split panes
+const MIN_RATIO = 0.15;
+const MAX_RATIO = 0.85;
+
+const REPO_OWNER = 'JoelPaganRoman';
+const REPO_NAME = 'workbench-app';
 
 const TABS = {
   docs:   { url: 'https://docs.google.com/document/u/0/',      label: 'Docs' },
@@ -14,10 +22,107 @@ const TABS = {
 
 let win = null;
 let chromeView = null;
+let dividerView = null;
+let dividerAttached = false;
 let views = {};          // key -> WebContentsView (content views, created lazily)
 let attachedSet = new Set();
 let panes = { left: 'docs', right: null };
 let splitMode = false;
+
+// Content-area geometry, updated every layout() call — the divider drag math
+// and the "jump the divider view to cover the whole content area while
+// dragging" trick both need this.
+let contentGeom = { x: 0, y: 0, width: 0, height: 0 };
+let dividerDrag = null;
+
+const DEFAULT_SETTINGS = { tabPosition: 'top', splitRatio: 0.5 };
+
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+
+function loadSettings() {
+  try {
+    const stored = JSON.parse(fs.readFileSync(getSettingsPath(), 'utf8'));
+    return { ...DEFAULT_SETTINGS, ...stored };
+  } catch (e) {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettings(partial) {
+  const merged = { ...loadSettings(), ...partial };
+  try {
+    fs.writeFileSync(getSettingsPath(), JSON.stringify(merged, null, 2));
+  } catch (e) { /* non-fatal */ }
+  return merged;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+// ---------- Simple update check (GitHub Releases as the update feed) ----------
+// Deliberately NOT a silent auto-installer: just checks the latest GitHub
+// Release tag against the running app's version, and if newer, shows a
+// native dialog with a link to the Releases page. A fully automatic
+// download-and-install flow needs a more elaborate signing setup than our
+// self-signed certificate reliably supports.
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na !== nb) return na - nb;
+  }
+  return 0;
+}
+
+function checkForUpdates(showNoUpdateDialog) {
+  const options = {
+    hostname: 'api.github.com',
+    path: `/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`,
+    headers: { 'User-Agent': 'Workbench-App' }
+  };
+  https.get(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      try {
+        const release = JSON.parse(data);
+        const latestTag = (release.tag_name || '').replace(/^v/, '');
+        const currentVersion = app.getVersion();
+        if (latestTag && compareVersions(latestTag, currentVersion) > 0) {
+          const settings = loadSettings();
+          if (settings.dismissedVersion === latestTag) return; // already said "later" for this one
+          dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'Actualización disponible',
+            message: `Hay una nueva versión de Workbench (${latestTag}) disponible.`,
+            detail: `Tienes la versión ${currentVersion}.`,
+            buttons: ['Descargar', 'Más tarde'],
+            defaultId: 0,
+            cancelId: 1
+          }).then((result) => {
+            if (result.response === 0) {
+              shell.openExternal(release.html_url || `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest`);
+            } else {
+              saveSettings({ dismissedVersion: latestTag });
+            }
+          });
+        } else if (showNoUpdateDialog) {
+          dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'Workbench',
+            message: 'Ya tienes la última versión.',
+            buttons: ['OK']
+          });
+        }
+      } catch (e) { /* network hiccup or malformed response — not worth bothering the user */ }
+    });
+  }).on('error', () => { /* offline or GitHub unreachable — silently skip */ });
+}
 
 function classifyUrl(url) {
   try {
@@ -33,29 +138,84 @@ function classifyUrl(url) {
   return null;
 }
 
-function getHeaderHeight() {
-  return TAB_BAR_HEIGHT + (splitMode ? PANE_BAR_HEIGHT : 0);
+function getChromeSize() {
+  return TAB_BAR_SIZE + (splitMode ? PANE_BAR_SIZE : 0);
 }
 
 function layout() {
   if (!win) return;
   const [width, height] = win.getContentSize();
-  const headerH = getHeaderHeight();
+  const settings = loadSettings();
+  const isLeft = settings.tabPosition === 'left';
+  const chromeSize = getChromeSize();
 
-  chromeView.setBounds({ x: 0, y: 0, width, height: headerH });
+  if (isLeft) {
+    chromeView.setBounds({ x: 0, y: 0, width: chromeSize, height });
+    contentGeom = { x: chromeSize, y: 0, width: width - chromeSize, height };
+  } else {
+    chromeView.setBounds({ x: 0, y: 0, width, height: chromeSize });
+    contentGeom = { x: 0, y: chromeSize, width, height: height - chromeSize };
+  }
+
+  layoutContentPanes(settings);
+}
+
+function layoutContentPanes(settings) {
+  const { x, y, width, height } = contentGeom;
 
   if (!splitMode) {
-    if (views[panes.left]) {
-      views[panes.left].setBounds({ x: 0, y: headerH, width, height: height - headerH });
+    if (views[panes.left]) views[panes.left].setBounds({ x, y, width, height });
+    hideDivider();
+    return;
+  }
+
+  const ratio = clamp((settings || loadSettings()).splitRatio, MIN_RATIO, MAX_RATIO);
+  const half = DIVIDER_SIZE / 2;
+  const firstWidth = Math.round(width * ratio);
+
+  if (views[panes.left]) {
+    views[panes.left].setBounds({ x, y, width: firstWidth - half, height });
+  }
+  if (panes.right && views[panes.right]) {
+    views[panes.right].setBounds({
+      x: x + firstWidth + half,
+      y,
+      width: width - firstWidth - half,
+      height
+    });
+  }
+
+  if (!dividerDrag) {
+    showDivider(x + firstWidth - half, y, DIVIDER_SIZE, height);
+  }
+}
+
+function ensureDividerView() {
+  if (dividerView) return dividerView;
+  dividerView = new WebContentsView({
+    webPreferences: {
+      preload: path.join(__dirname, 'divider-preload.js'),
+      contextIsolation: true
     }
-  } else {
-    const halfW = Math.floor(width / 2);
-    if (views[panes.left]) {
-      views[panes.left].setBounds({ x: 0, y: headerH, width: halfW - 1, height: height - headerH });
-    }
-    if (panes.right && views[panes.right]) {
-      views[panes.right].setBounds({ x: halfW + 1, y: headerH, width: width - halfW - 1, height: height - headerH });
-    }
+  });
+  dividerView.setBackgroundColor('#00000000');
+  dividerView.webContents.loadFile('divider.html');
+  return dividerView;
+}
+
+function showDivider(x, y, w, h) {
+  ensureDividerView();
+  if (!dividerAttached) {
+    win.contentView.addChildView(dividerView);
+    dividerAttached = true;
+  }
+  dividerView.setBounds({ x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) });
+}
+
+function hideDivider() {
+  if (dividerAttached && dividerView) {
+    win.contentView.removeChildView(dividerView);
+    dividerAttached = false;
   }
 }
 
@@ -167,7 +327,7 @@ function createWindow() {
     vibrancy: 'header',
     visualEffectState: 'active',
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: (TAB_BAR_HEIGHT - 14) / 2 }
+    trafficLightPosition: { x: 18, y: 17 }
   });
 
   chromeView = new WebContentsView({
@@ -200,6 +360,9 @@ function createWindow() {
       label: app.name,
       submenu: [
         { role: 'about' }, { type: 'separator' },
+        { label: 'Preferences…', accelerator: 'CmdOrCtrl+,', click: () => openSettingsWindow() },
+        { label: 'Check for Updates…', click: () => checkForUpdates(true) },
+        { type: 'separator' },
         { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' },
         { role: 'quit' }
       ]
@@ -239,7 +402,80 @@ ipcMain.on('toggle-split', () => toggleSplit());
 ipcMain.on('close-split', () => closeSplit());
 ipcMain.on('select-pane-tab', (event, { pane, key }) => setPaneContent(pane, key));
 
-app.whenReady().then(createWindow);
+ipcMain.on('divider-drag-start', (event, screenX) => {
+  const settings = loadSettings();
+  dividerDrag = {
+    startScreenX: screenX,
+    startRatio: settings.splitRatio,
+    contentWidth: contentGeom.width
+  };
+  // Grow the (normally sliver-thin) divider to cover the whole content area
+  // for the duration of the drag, so it keeps receiving mousemove even once
+  // the cursor moves well past its resting position.
+  if (dividerView) {
+    dividerView.setBounds({
+      x: Math.round(contentGeom.x),
+      y: Math.round(contentGeom.y),
+      width: Math.round(contentGeom.width),
+      height: Math.round(contentGeom.height)
+    });
+  }
+});
+
+ipcMain.on('divider-drag-move', (event, screenX) => {
+  if (!dividerDrag) return;
+  const deltaX = screenX - dividerDrag.startScreenX;
+  const newRatio = clamp(dividerDrag.startRatio + deltaX / dividerDrag.contentWidth, MIN_RATIO, MAX_RATIO);
+  saveSettings({ splitRatio: newRatio });
+  layoutContentPanes(loadSettings());
+});
+
+ipcMain.on('divider-drag-end', () => {
+  dividerDrag = null;
+  layout(); // shrinks the divider back down to its thin strip at the new position
+});
+
+ipcMain.handle('get-settings', () => loadSettings());
+ipcMain.handle('save-settings', (event, partial) => {
+  const merged = saveSettings(partial);
+  layout();
+  if (chromeView) chromeView.webContents.send('settings-changed', merged);
+  return merged;
+});
+ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.on('check-for-updates', () => checkForUpdates(true));
+
+let settingsWin = null;
+function openSettingsWindow() {
+  if (settingsWin) { settingsWin.focus(); return; }
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const winWidth = 420;
+  const winHeight = 340;
+  settingsWin = new BaseWindow({
+    width: winWidth,
+    height: winHeight,
+    x: Math.round((width - winWidth) / 2),
+    y: Math.round((height - winHeight) / 2),
+    title: 'Preferences',
+    titleBarStyle: 'hiddenInset',
+    backgroundColor: '#000000'
+  });
+  const settingsView = new WebContentsView({
+    webPreferences: {
+      preload: path.join(__dirname, 'settings-preload.js'),
+      contextIsolation: true
+    }
+  });
+  settingsWin.contentView.addChildView(settingsView);
+  settingsView.setBounds({ x: 0, y: 0, width: winWidth, height: winHeight });
+  settingsView.webContents.loadFile('settings.html');
+  settingsWin.on('closed', () => { settingsWin = null; });
+}
+
+app.whenReady().then(() => {
+  createWindow();
+  setTimeout(() => checkForUpdates(false), 4000);
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

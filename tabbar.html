@@ -5,41 +5,47 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    height: 100%;
+    width: 100%; height: 100%;
     background: #000000;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
     user-select: none;
     overflow: hidden;
   }
 
-  #chrome { position: relative; z-index: 1; }
+  #chrome { position: relative; z-index: 1; width: 100%; height: 100%; }
 
-  /* ---------- Main tab bar ---------- */
+  /* ---------- Chrome container: adapts to top bar or left sidebar ---------- */
   #topbar {
     position: relative;
     -webkit-app-region: drag;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    padding: 0 14px;
     background: #000000;
+  }
+  body.layout-top #topbar {
+    width: 100%; height: 48px;
+    display: flex; align-items: center; padding: 0 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  body.layout-left #topbar {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 68px; /* clear the traffic lights */
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
   }
 
   .tabs {
     -webkit-app-region: no-drag;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    gap: 4px;
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
-    padding: 4px;
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  body.layout-top .tabs {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: flex; gap: 4px; padding: 4px;
+  }
+  body.layout-left .tabs {
+    display: flex; flex-direction: column; gap: 4px; padding: 4px;
   }
 
   .tab {
@@ -52,6 +58,14 @@
     background: transparent;
     border: 1px solid transparent;
     transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s ease, box-shadow 0.18s ease;
+    text-align: center;
+  }
+  body.layout-left .tab {
+    padding: 8px 6px;
+    width: 40px;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0.3px;
   }
   .tab:hover { background: rgba(255, 255, 255, 0.07); color: #f1f2f4; }
   .tab.active {
@@ -69,10 +83,6 @@
 
   #splitBtn {
     -webkit-app-region: no-drag;
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -88,6 +98,17 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     transition: background 0.18s ease, color 0.18s ease;
   }
+  body.layout-top #splitBtn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  }
+  body.layout-left #splitBtn {
+    margin-top: auto;
+    margin-bottom: 16px;
+    padding: 8px 8px;
+    font-size: 10px;
+    flex-direction: column;
+    gap: 3px;
+  }
   #splitBtn:hover { background: rgba(255, 255, 255, 0.11); color: #fff; }
   #splitBtn.active {
     background: rgba(90, 130, 220, 0.5);
@@ -96,7 +117,7 @@
   }
   #splitBtn svg { width: 13px; height: 13px; }
 
-  /* ---------- Pane bar (only visible in split mode) ---------- */
+  /* ---------- Pane bar: second row (top mode) ---------- */
   #panebar {
     display: none;
     height: 38px;
@@ -105,7 +126,7 @@
     align-items: center;
     justify-content: center;
   }
-  #panebar.visible { display: flex; }
+  body.layout-top #panebar.visible { display: flex; }
   .pane-half {
     -webkit-app-region: no-drag;
     display: flex;
@@ -145,17 +166,55 @@
     transition: background 0.18s ease, color 0.18s ease;
   }
   #closeSplit:hover { background: rgba(255, 80, 80, 0.35); color: #fff; }
+
+  /* ---------- Pane target picker: left-sidebar mode, split only ---------- */
+  #paneTargetPicker {
+    display: none;
+    -webkit-app-region: no-drag;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  body.layout-left #paneTargetPicker.visible { display: flex; }
+  .pane-target-row { display: flex; gap: 4px; }
+  .pane-target-btn {
+    width: 22px; height: 22px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700;
+    color: rgba(230, 232, 235, 0.55);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .pane-target-btn:hover { background: rgba(255, 255, 255, 0.08); }
+  .pane-target-btn.active { background: rgba(90, 130, 220, 0.55); color: #fff; }
+  #paneTargetPicker #closeSplitLeft { margin: 0; width: 22px; height: 22px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; color: rgba(220,222,226,0.7);
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; font-size: 11px; }
+  #paneTargetPicker #closeSplitLeft:hover { background: rgba(255, 80, 80, 0.35); color: #fff; }
 </style>
 </head>
-<body>
+<body class="layout-top">
   <div id="chrome">
     <div id="topbar">
+      <div id="paneTargetPicker">
+        <div class="pane-target-row">
+          <div class="pane-target-btn active" data-pane="left">L</div>
+          <div class="pane-target-btn" data-pane="right">R</div>
+        </div>
+        <div id="closeSplitLeft">✕</div>
+      </div>
       <div class="tabs" id="mainTabs">
-        <div class="tab" data-key="docs">Docs</div>
-        <div class="tab" data-key="sheets">Sheets</div>
-        <div class="tab" data-key="slides">Slides</div>
-        <div class="tab" data-key="gemini">Gemini</div>
-        <div class="tab" data-key="drive">Drive</div>
+        <div class="tab" data-key="docs" title="Docs">Docs</div>
+        <div class="tab" data-key="sheets" title="Sheets">Sheets</div>
+        <div class="tab" data-key="slides" title="Slides">Slides</div>
+        <div class="tab" data-key="gemini" title="Gemini">Gemini</div>
+        <div class="tab" data-key="drive" title="Drive">Drive</div>
       </div>
       <div id="splitBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -175,20 +234,61 @@
   <script>
     const KEYS = ['docs', 'sheets', 'slides', 'gemini', 'drive'];
     const LABELS = { docs: 'Docs', sheets: 'Sheets', slides: 'Slides', gemini: 'Gemini', drive: 'Drive' };
+    const SHORT_LABELS = { docs: 'Doc', sheets: 'Sht', slides: 'Sld', gemini: 'Gem', drive: 'Drv' };
 
+    const body = document.body;
     const mainTabs = document.querySelectorAll('#mainTabs .tab');
     const splitBtn = document.getElementById('splitBtn');
     const paneBar = document.getElementById('panebar');
     const leftPaneTabs = document.getElementById('leftPaneTabs');
     const rightPaneTabs = document.getElementById('rightPaneTabs');
     const closeSplitBtn = document.getElementById('closeSplit');
+    const paneTargetPicker = document.getElementById('paneTargetPicker');
+    const closeSplitLeftBtn = document.getElementById('closeSplitLeft');
+    const paneTargetButtons = paneTargetPicker.querySelectorAll('.pane-target-btn');
+
+    let currentLayout = 'top';
+    let currentSplitMode = false;
+    let activePaneTarget = 'left'; // used only in layout-left split mode
+
+    function applyLayout(tabPosition) {
+      currentLayout = tabPosition;
+      body.classList.toggle('layout-left', tabPosition === 'left');
+      body.classList.toggle('layout-top', tabPosition !== 'left');
+      mainTabs.forEach((t) => {
+        t.textContent = tabPosition === 'left' ? SHORT_LABELS[t.dataset.key] : LABELS[t.dataset.key];
+      });
+      refreshPaneTargetPicker();
+    }
+
+    function refreshPaneTargetPicker() {
+      const show = currentLayout === 'left' && currentSplitMode;
+      paneTargetPicker.classList.toggle('visible', show);
+    }
+
+    window.tabAPI.getSettings().then((settings) => applyLayout(settings.tabPosition));
+    window.tabAPI.onSettingsChanged((settings) => applyLayout(settings.tabPosition));
 
     mainTabs.forEach(tab => {
-      tab.addEventListener('click', () => window.tabAPI.switchTab(tab.dataset.key));
+      tab.addEventListener('click', () => {
+        if (currentLayout === 'left' && currentSplitMode) {
+          window.tabAPI.selectPaneTab(activePaneTarget, tab.dataset.key);
+        } else {
+          window.tabAPI.switchTab(tab.dataset.key);
+        }
+      });
+    });
+
+    paneTargetButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activePaneTarget = btn.dataset.pane;
+        paneTargetButtons.forEach((b) => b.classList.toggle('active', b === btn));
+      });
     });
 
     splitBtn.addEventListener('click', () => window.tabAPI.toggleSplit());
     closeSplitBtn.addEventListener('click', () => window.tabAPI.closeSplit());
+    closeSplitLeftBtn.addEventListener('click', () => window.tabAPI.closeSplit());
 
     function buildMiniTabs(container, pane, activeKey) {
       container.innerHTML = '';
@@ -202,9 +302,11 @@
     }
 
     window.tabAPI.onPanesChanged((panes, splitMode) => {
-      mainTabs.forEach(t => t.classList.toggle('active', t.dataset.key === panes.left));
+      currentSplitMode = splitMode;
+      mainTabs.forEach(t => t.classList.toggle('active', t.dataset.key === panes.left || t.dataset.key === panes.right));
       splitBtn.classList.toggle('active', splitMode);
       paneBar.classList.toggle('visible', splitMode);
+      refreshPaneTargetPicker();
       if (splitMode) {
         buildMiniTabs(leftPaneTabs, 'left', panes.left);
         buildMiniTabs(rightPaneTabs, 'right', panes.right);
