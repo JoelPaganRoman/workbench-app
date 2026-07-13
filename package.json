@@ -1,7 +1,7 @@
 {
   "name": "workbench",
   "productName": "Workbench",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Docs, Sheets, Slides, Gemini y Drive en una sola app de escritorio",
   "main": "main.js",
   "author": "Joel Pagan Roman",
