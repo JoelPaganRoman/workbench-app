@@ -13,6 +13,32 @@ const MAX_RATIO = 0.85;
 const REPO_OWNER = 'JoelPaganRoman';
 const REPO_NAME = 'workbench-app';
 
+function getWindowBoundsPath() {
+  return path.join(app.getPath('userData'), 'window-bounds.json');
+}
+
+function loadWindowBounds() {
+  try {
+    const raw = fs.readFileSync(getWindowBoundsPath(), 'utf8');
+    const bounds = JSON.parse(raw);
+    if (bounds && typeof bounds.width === 'number' && typeof bounds.height === 'number') {
+      return bounds;
+    }
+  } catch (e) { /* no saved bounds yet, use defaults */ }
+  return null;
+}
+
+let saveBoundsTimeout = null;
+function saveWindowBounds() {
+  if (!win) return;
+  clearTimeout(saveBoundsTimeout);
+  saveBoundsTimeout = setTimeout(() => {
+    try {
+      fs.writeFileSync(getWindowBoundsPath(), JSON.stringify(win.getBounds()));
+    } catch (e) { /* non-fatal */ }
+  }, 400); // debounce — don't write on every pixel while dragging/resizing
+}
+
 const TABS = {
   docs:   { url: 'https://docs.google.com/document/u/0/',      label: 'Docs' },
   sheets: { url: 'https://docs.google.com/spreadsheets/u/0/',  label: 'Sheets' },
@@ -127,16 +153,28 @@ function checkForUpdates(showNoUpdateDialog) {
 
 function classifyUrl(url) {
   try {
-    const u = new URL(url);
-    if (u.hostname.includes('drive.google.com')) return 'drive';
-    if (u.hostname.includes('gemini.google.com')) return 'gemini';
+    let u = new URL(url);
+    let resolvedUrl = url;
+
+    // Google wraps many outbound links (including ones Gemini shares) in a
+    // redirector like https://www.google.com/url?q=<real target>&... —
+    // unwrap that first so the real destination gets classified correctly.
+    if ((u.hostname === 'www.google.com' || u.hostname === 'google.com') && u.pathname === '/url') {
+      const inner = u.searchParams.get('q') || u.searchParams.get('url');
+      if (inner) {
+        try { u = new URL(inner); resolvedUrl = inner; } catch (e) { /* inner wasn't a valid absolute URL */ }
+      }
+    }
+
+    if (u.hostname.includes('drive.google.com')) return { target: 'drive', url: resolvedUrl };
+    if (u.hostname.includes('gemini.google.com')) return { target: 'gemini', url: resolvedUrl };
     if (u.hostname.includes('docs.google.com') || u.hostname.includes('sheets.google.com') || u.hostname.includes('slides.google.com')) {
-      if (u.pathname.startsWith('/spreadsheets')) return 'sheets';
-      if (u.pathname.startsWith('/presentation')) return 'slides';
-      if (u.pathname.startsWith('/document')) return 'docs';
+      if (u.pathname.startsWith('/spreadsheets')) return { target: 'sheets', url: resolvedUrl };
+      if (u.pathname.startsWith('/presentation')) return { target: 'slides', url: resolvedUrl };
+      if (u.pathname.startsWith('/document')) return { target: 'docs', url: resolvedUrl };
     }
   } catch (e) { /* not a valid absolute URL, ignore */ }
-  return null;
+  return { target: null, url };
 }
 
 function getChromeSize(isLeft) {
@@ -247,20 +285,20 @@ function openInTab(key, url, sourceKey) {
 
 function attachNavigationInterception(view, ownKey) {
   view.webContents.on('will-navigate', (event, url) => {
-    const target = classifyUrl(url);
+    const { target, url: resolvedUrl } = classifyUrl(url);
     if (target && target !== ownKey) {
       event.preventDefault();
-      openInTab(target, url, ownKey);
+      openInTab(target, resolvedUrl, ownKey);
     }
   });
   view.webContents.setWindowOpenHandler(({ url }) => {
-    const target = classifyUrl(url);
+    const { target, url: resolvedUrl } = classifyUrl(url);
     if (target && target !== ownKey) {
-      openInTab(target, url, ownKey);
+      openInTab(target, resolvedUrl, ownKey);
       return { action: 'deny' };
     }
     if (target === ownKey) {
-      view.webContents.loadURL(url);
+      view.webContents.loadURL(resolvedUrl);
       return { action: 'deny' };
     }
     shell.openExternal(url);
@@ -318,9 +356,12 @@ function closeSplit() {
 }
 
 function createWindow() {
+  const savedBounds = loadWindowBounds();
   win = new BaseWindow({
-    width: 1360,
-    height: 880,
+    width: savedBounds ? savedBounds.width : 1360,
+    height: savedBounds ? savedBounds.height : 880,
+    x: savedBounds ? savedBounds.x : undefined,
+    y: savedBounds ? savedBounds.y : undefined,
     minWidth: 820,
     minHeight: 540,
     title: 'Workbench',
@@ -331,6 +372,9 @@ function createWindow() {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 17 }
   });
+
+  win.on('resize', saveWindowBounds);
+  win.on('move', saveWindowBounds);
 
   chromeView = new WebContentsView({
     webPreferences: {
