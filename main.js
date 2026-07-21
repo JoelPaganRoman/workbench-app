@@ -22,6 +22,20 @@ function loadWindowBounds() {
     const raw = fs.readFileSync(getWindowBoundsPath(), 'utf8');
     const bounds = JSON.parse(raw);
     if (bounds && typeof bounds.width === 'number' && typeof bounds.height === 'number') {
+      // If the saved x/y came from a monitor that's no longer connected
+      // (e.g. an external display), don't use a position that would open
+      // off-screen — keep the remembered size but let Electron center it.
+      if (typeof bounds.x === 'number' && typeof bounds.y === 'number') {
+        const isOnScreen = screen.getAllDisplays().some((d) => {
+          const r = d.bounds;
+          return bounds.x >= r.x && bounds.y >= r.y &&
+                 bounds.x < r.x + r.width && bounds.y < r.y + r.height;
+        });
+        if (!isOnScreen) {
+          delete bounds.x;
+          delete bounds.y;
+        }
+      }
       return bounds;
     }
   } catch (e) { /* no saved bounds yet, use defaults */ }
@@ -394,7 +408,17 @@ function createWindow() {
   win.on('resize', layout);
   win.on('resized', layout);
 
+  win.on('close', () => {
+    // Save immediately (no debounce) so the final position/size is captured
+    // even if the window closes right after being moved or resized.
+    clearTimeout(saveBoundsTimeout);
+    try {
+      fs.writeFileSync(getWindowBoundsPath(), JSON.stringify(win.getBounds()));
+    } catch (e) { /* non-fatal */ }
+  });
+
   win.on('closed', () => {
+    clearTimeout(saveBoundsTimeout);
     win = null;
     chromeView = null;
     views = {};
