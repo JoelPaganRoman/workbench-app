@@ -1,67 +1,42 @@
-<p align="right"><a href="README.es.md">🇪🇸 Español</a></p>
-
-<p align="center">
-  <img src="screenshots/logo.svg" alt="Workbench" width="480">
-</p>
-
 # Workbench
 
-Workbench is a macOS desktop app that brings together **Google Docs, Sheets,
-Slides, Gemini, and Drive** in a single tabbed window, instead of juggling
-them as separate browser tabs.
+Docs, Sheets, Slides, Gemini y Drive en una sola app nativa de macOS.
 
-## Screenshots
+**v2.0** es una reescritura completa en Swift/SwiftUI con WKWebView — la app pasa de ~250 MB (Electron) a ~1 MB, con menor consumo de RAM y batería. La versión Electron original vive en el historial de git (hasta v1.1.3).
 
-| Docs | Slides |
-|---|---|
-| ![Docs view](screenshots/docs-view.png) | ![Slides view](screenshots/slides-view.png) |
+## Funciones
 
-| Split view (Gemini + Docs) |
-|---|
-| ![Split view](screenshots/split-view.png) |
+- 🗂 Pestañas: Docs, Sheets, Slides, Gemini y Drive (⌘1–⌘5) + Gmail, Calendar, Keep y Meet activables en Preferencias
+- ⬅➡ Pantalla dividida (⌘\) con divisor arrastrable y selector de pestaña por panel
+- 🔗 Enrutado inteligente de enlaces: un enlace de Docs abierto en Gemini salta a la pestaña de Docs; los enlaces externos van a tu navegador
+- ✨ Gemini flotante (⇧⌘G): panel siempre visible sobre cualquier app y en todos los escritorios
+- ⌨️ Atajo global ⌥⌘W: muestra/oculta Workbench desde cualquier app
+- 📥 Descargas a ~/Descargas con revelado en Finder
+- 🔔 Notificaciones web (Gmail/Calendar) como notificaciones nativas de macOS
+- 💾 Sesión única de Google compartida entre pestañas; recuerda pestaña activa, split, tamaño y posición de ventana
+- 🔄 Aviso de actualizaciones vía GitHub Releases
 
-## What it does
+## Instalación
 
-- **5 apps in one window**: Docs, Sheets, Slides, Gemini, and Drive, each
-  with its own tab (⌘1–⌘5 to jump between them).
-- **Automatic routing**: open a file from Drive and the app detects whether
-  it's a document, spreadsheet, or presentation, and opens it directly in
-  the matching tab — you never leave the app.
-- **Split screen**: two side-by-side panes, each with its own independent
-  app selector ("Split" button or ⌘\\).
-- Keeps your Google session between launches — no need to sign in every
-  time.
+1. Descarga `Workbench-mac.zip` desde [Releases](https://github.com/JoelPaganRoman/workbench-app/releases)
+2. Descomprime y arrastra `Workbench.app` a Aplicaciones
+3. **Primera apertura** (la app está firmada ad-hoc, sin notarizar): clic derecho → Abrir → Abrir. Si macOS lo bloquea, ve a Ajustes del Sistema → Privacidad y seguridad → "Abrir de todos modos", o en Terminal:
 
-## Installation
+```bash
+xattr -dc /Applications/Workbench.app
+```
 
-1. Go to the [**Releases**](../../releases) tab of this repository and
-   download the latest `.zip` (`Workbench-mac.zip`).
-2. Drag `Workbench.app` into your **Applications** folder.
-3. The first time you open it, macOS will warn that it can't verify the
-   developer. This is expected — follow these steps:
-   - Try opening the app normally (double-click). You'll see the block
-     warning.
-   - Go to **System Settings → Privacy & Security**.
-   - Scroll down to the Security section. You should see a message
-     mentioning that "Workbench" was blocked, with an
-     **Open Anyway** button.
-   - Click it and confirm with your password or Touch ID.
-   - Open the app once more and confirm with **Open** on the final dialog.
-     From then on, the app opens normally without asking again.
+## Compilar desde el código
 
-### Why do I have to do this instead of just opening the app?
+Requiere Xcode 16+ y macOS 14+.
 
-macOS only opens apps "without asking" if they've gone through Apple's
-**notarization** process, which requires a paid **Apple Developer Program**
-membership (99 USD/year) plus your own signing certificate. Workbench is a
-small personal project, so instead of paying that fee, the app is signed
-with an **ad-hoc signature** (free) during the automated build process on
-GitHub Actions.
+```bash
+cd Workbench-Swift
+xcodebuild -project Workbench.xcodeproj -target Workbench -configuration Release build
+```
 
-That ad-hoc signature is enough for macOS to trust that the file hasn't been
-tampered with after being built, but it doesn't include identity
-verification from a developer registered with Apple — which is why
-Gatekeeper (macOS's security system) treats it as coming from an
-"unidentified developer" and asks for manual confirmation the first time,
-instead of blocking it outright as "damaged." It's a one-time step per
-install, not something that repeats every time you open the app.
+O abre `Workbench-Swift/Workbench.xcodeproj` en Xcode y pulsa ⌘R.
+
+## Licencia
+
+ISC — ver [LICENSE](LICENSE).
