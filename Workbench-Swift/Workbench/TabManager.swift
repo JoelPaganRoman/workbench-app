@@ -68,10 +68,26 @@ final class TabManager: NSObject, ObservableObject {
 
     /// All tabs share one data store so a single Google sign-in covers
     /// every tab — the equivalent of Electron's persist:googleworkspace partition.
+    /// Real, installed Safari version, read from Safari.app itself so the UA we
+    /// present never goes stale — Google Workspace only supports the current
+    /// and previous Safari version and shows an "unsupported browser" banner
+    /// (with a degraded, blurrier renderer) once the reported version falls
+    /// behind, which a hardcoded version number inevitably would.
+    private static let installedSafariVersion: String = {
+        let path = "/Applications/Safari.app/Contents/Info.plist"
+        if let dict = NSDictionary(contentsOfFile: path),
+           let version = dict["CFBundleShortVersionString"] as? String {
+            return version
+        }
+        return "17.4" // fallback if Safari.app isn't found
+    }()
+
     private func makeWebView(url: URL) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
-        config.applicationNameForUserAgent = "Version/17.4 Safari/605.1.15"
+        // The "Safari/605.1.15" product token has stayed frozen across Safari
+        // versions for years — only "Version/X" needs to track the real app.
+        config.applicationNameForUserAgent = "Version/\(Self.installedSafariVersion) Safari/605.1.15"
         // Bridge the Web Notification API to native macOS notifications:
         // pages call new Notification(...) and we forward it to UNUserNotificationCenter.
         let script = """
