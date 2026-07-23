@@ -20,23 +20,4 @@ Docs, Sheets, Slides, Gemini y Drive en una sola app nativa de macOS.
 
 1. Descarga `Workbench-mac.zip` desde [Releases](https://github.com/JoelPaganRoman/workbench-app/releases)
 2. Descomprime y arrastra `Workbench.app` a Aplicaciones
-3. **Primera apertura** (la app está firmada ad-hoc, sin notarizar): clic derecho → Abrir → Abrir. Si macOS lo bloquea, ve a Ajustes del Sistema → Privacidad y seguridad → "Abrir de todos modos", o en Terminal:
-
-```bash
-xattr -dc /Applications/Workbench.app
-```
-
-## Compilar desde el código
-
-Requiere Xcode 16+ y macOS 14+.
-
-```bash
-cd Workbench-Swift
-xcodebuild -project Workbench.xcodeproj -target Workbench -configuration Release build
-```
-
-O abre `Workbench-Swift/Workbench.xcodeproj` en Xcode y pulsa ⌘R.
-
-## Licencia
-
-ISC — ver [LICENSE](LICENSE).
+3. **Primera apertura** (la app está firmada ad-hoc, sin notarizar): clic derecho → Abrir → Abrir. Si macOS lo bloquea, ve a Ajustes del Sistema → Privacidad y seguridad → "Abrir de todos modos"
